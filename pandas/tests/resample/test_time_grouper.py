@@ -167,7 +167,7 @@ def test_aggregate_normal(resample_method):
         ("prod", dict(min_count=1), np.nan),
     ],
 )
-def test_resample_entirly_nat_window(method, method_args, unit):
+def test_resample_entirely_nat_window(method, method_args, unit):
     s = pd.Series([0] * 2 + [np.nan] * 2, index=pd.date_range("2017", periods=4))
     result = methodcaller(method, **method_args)(s.resample("2d"))
     expected = pd.Series(
@@ -250,6 +250,15 @@ def test_repr():
         "TimeGrouper(key='A', freq=<Hour>, axis=0, sort=True, "
         "closed='left', label='left', how='mean', "
         "convention='e', base=0)"
+    )
+    assert result == expected
+
+    result = repr(Grouper(key="A", freq="H", origin="1970-01-01"))
+    expected = (
+        "TimeGrouper(key='A', freq=<Hour>, axis=0, sort=True, "
+        "closed='left', label='left', how='mean', "
+        "convention='e', base=0, "
+        "origin=Timestamp('1970-01-01 00:00:00', freq='N'))"
     )
     assert result == expected
 

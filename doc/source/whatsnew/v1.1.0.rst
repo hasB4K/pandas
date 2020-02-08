@@ -36,6 +36,30 @@ For example:
    ser["2014"]
    ser.loc["May 2015"]
 
+.. _whatsnew_110.grouper_origin:
+
+Grouper now supports the argument origin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:class:`Grouper` and :class:`DataFrame.resample` now supports the argument `origin`. A the timestamp on which to adjust the grouping. (:issue:`31809`)
+
+The bins of the grouping are adjusted based on the beginning of the day of the time series starting point. This works well with frequencies that are multiples of a day (like `30D`) or that divides a day (like `90s` or `1min`). But it can create inconsistencies with some frequencies that do not meet this criteria. To change this behavior you can now specify a fixed timestamp with `origin`.
+
+For example:
+
+.. ipython:: python
+
+   start, end = "1/1/2000 00:00:00", "1/31/2000 00:00"
+   rng = pd.date_range(start, end, freq="1231min")
+   ts = pd.Series(np.arange(len(rng)), index=rng)
+   ts.groupby(pd.Grouper(freq="1399min")).agg("count")
+   ts.groupby(pd.Grouper(
+       freq="1399min",
+       origin=pd.Timestamp("1970-01-01"))
+   ).agg("count")
+
+..
+
 .. _whatsnew_110.enhancements.other:
 
 Other enhancements

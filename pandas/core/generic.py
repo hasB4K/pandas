@@ -7651,6 +7651,7 @@ class NDFrame(PandasObject, SelectionMixin, indexing.IndexingMixin):
         kind: Optional[str] = None,
         loffset=None,
         base: int = 0,
+        origin=None,
         on=None,
         level=None,
     ) -> "Resampler":
@@ -7691,6 +7692,9 @@ class NDFrame(PandasObject, SelectionMixin, indexing.IndexingMixin):
             For frequencies that evenly subdivide 1 day, the "origin" of the
             aggregated intervals. For example, for '5min' frequency, base could
             range from 0 through 4. Defaults to 0.
+        origin : pd.Timestamp, default None
+            The timestamp on which to adjust the grouping. If None is passed,
+            the first day of the time series at midnight is used.
         on : str, optional
             For a DataFrame, column to use instead of index for resampling.
             Column must be datetime-like.
@@ -7931,6 +7935,7 @@ class NDFrame(PandasObject, SelectionMixin, indexing.IndexingMixin):
             loffset=loffset,
             convention=convention,
             base=base,
+            origin=origin,
             key=on,
             level=level,
         )

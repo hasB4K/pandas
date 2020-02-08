@@ -68,6 +68,13 @@ class Grouper:
         If grouper is PeriodIndex and `freq` parameter is passed.
     base : int, default 0
         Only when `freq` parameter is passed.
+        For frequencies that evenly subdivide 1 day, the "origin" of the
+        aggregated intervals. For example, for '5min' frequency, base could
+        range from 0 through 4. Defaults to 0.
+    origin : Timestamp, default None
+        Only when `freq` parameter is passed.
+        The timestamp on which to adjust the grouping. If None is passed, the
+        first day of the time series at midnight is used.
     loffset : str, DateOffset, timedelta object
         Only when `freq` parameter is passed.
 

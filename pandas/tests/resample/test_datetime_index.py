@@ -794,6 +794,20 @@ def test_resample_base():
     tm.assert_index_equal(resampled.index, exp_rng)
 
 
+def test_resample_origin():
+    rng = date_range("1/1/2000 00:00:00", "1/1/2000 02:00", freq="s")
+    ts = Series(np.random.randn(len(rng)), index=rng)
+
+    exp_rng = date_range("12/31/1999 23:57:00", "1/1/2000 01:57", freq="5min")
+
+    resampled = ts.resample("5min", origin="12/31/1999 23:57:00").mean()
+    tm.assert_index_equal(resampled.index, exp_rng)
+
+    offset_timestamp = pd.Timestamp(0) + pd.Timedelta("2min")
+    resampled = ts.resample("5min", origin=offset_timestamp).mean()
+    tm.assert_index_equal(resampled.index, exp_rng)
+
+
 def test_resample_float_base():
     # GH25161
     dt = pd.to_datetime(
@@ -1543,7 +1557,7 @@ def test_resample_equivalent_offsets(n1, freq1, n2, freq2, k):
 
 
 @pytest.mark.parametrize(
-    "first,last,offset,exp_first,exp_last",
+    "first,last,freq,exp_first,exp_last",
     [
         ("19910905", "19920406", "D", "19910905", "19920407"),
         ("19910905 00:00", "19920406 06:00", "D", "19910905", "19920407"),
@@ -1553,17 +1567,17 @@ def test_resample_equivalent_offsets(n1, freq1, n2, freq2, k):
         ("1991-08", "1992-04", "M", "19910831", "19920531"),
     ],
 )
-def test_get_timestamp_range_edges(first, last, offset, exp_first, exp_last):
+def test_get_timestamp_range_edges(first, last, freq, exp_first, exp_last):
     first = pd.Period(first)
     first = first.to_timestamp(first.freq)
     last = pd.Period(last)
     last = last.to_timestamp(last.freq)
 
-    exp_first = pd.Timestamp(exp_first, freq=offset)
-    exp_last = pd.Timestamp(exp_last, freq=offset)
+    exp_first = pd.Timestamp(exp_first, freq=freq)
+    exp_last = pd.Timestamp(exp_last, freq=freq)
 
-    offset = pd.tseries.frequencies.to_offset(offset)
-    result = _get_timestamp_range_edges(first, last, offset)
+    freq = pd.tseries.frequencies.to_offset(freq)
+    result = _get_timestamp_range_edges(first, last, freq)
     expected = (exp_first, exp_last)
     assert result == expected
 
