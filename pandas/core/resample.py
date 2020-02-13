@@ -6,7 +6,7 @@ from typing import Dict, no_type_check
 import numpy as np
 
 from pandas._libs import lib
-from pandas._libs.tslibs import NaT, Period, Timestamp
+from pandas._libs.tslibs import NaT, Period, Timestamp, Timedelta
 from pandas._libs.tslibs.frequencies import is_subperiod, is_superperiod
 from pandas._libs.tslibs.period import IncompatibleFrequency
 from pandas.compat.numpy import function as nv
@@ -1306,11 +1306,12 @@ class TimeGrouper(Grouper):
         "closed",
         "label",
         "how",
-        "loffset",
         "kind",
         "convention",
-        "base",
         "origin",
+        "origin_offset",
+        "base",  # Deprecated
+        "loffset",  # Deprecated
     )
 
     def __init__(
@@ -1322,11 +1323,12 @@ class TimeGrouper(Grouper):
         axis=0,
         fill_method=None,
         limit=None,
-        loffset=None,
         kind=None,
         convention=None,
         origin=None,
+        origin_offset=None,
         base=0,
+        loffset=None,
         **kwargs,
     ):
         # Check for correctness of the keyword arguments which would
@@ -1368,9 +1370,14 @@ class TimeGrouper(Grouper):
         self.fill_method = fill_method
         self.limit = limit
         self.base = base
+
         if origin is not None:
-            origin = Timestamp(origin, "ns")
+            origin = Timestamp(origin)
         self.origin = origin
+
+        if origin_offset is not None:
+            origin_offset = Timedelta(origin_offset, unit="ns")
+        self.origin_offset = origin_offset
 
         # always sort time groupers
         kwargs["sort"] = True
@@ -1436,6 +1443,7 @@ class TimeGrouper(Grouper):
             closed=self.closed,
             base=self.base,
             origin=self.origin,
+            origin_offset=self.origin_offset,
         )
         # GH #12037
         # use first/last directly instead of call replace() on them
@@ -1573,7 +1581,7 @@ class TimeGrouper(Grouper):
         bin_shift = 0
 
         # GH 23882
-        if self.base or self.origin:
+        if self.origin is not None or self.origin_offset is not None or self.base:
             # get base adjusted bin edge labels
             p_start, end = _get_period_range_edges(
                 start,
@@ -1582,6 +1590,7 @@ class TimeGrouper(Grouper):
                 closed=self.closed,
                 base=self.base,
                 origin=self.origin,
+                origin_offset=self.origin_offset,
             )
 
             # Get offset for bin edge (not label edge) adjustment
@@ -1703,7 +1712,7 @@ def _get_timestamp_range_edges(
 
 
 def _get_period_range_edges(
-    first, last, freq, closed="left", base=0, origin=None
+    first, last, freq, closed="left", base=0, origin=None, origin_offset=None
 ):
     """
     Adjust the provided `first` and `last` Periods to the respective Period of
@@ -1724,6 +1733,8 @@ def _get_period_range_edges(
     origin : pd.Timestamp, default None
         The timestamp on which to adjust the grouping. If None is passed, the
         first day of the time series at midnight is used.
+    origin_offset : pd.Timedelta, default is None
+        An offset timedelta added to the origin.
 
     Returns
     -------
@@ -1739,7 +1750,13 @@ def _get_period_range_edges(
     adjust_last = freq.is_on_offset(last)
 
     first, last = _get_timestamp_range_edges(
-        first, last, freq, closed=closed, base=base, origin=origin
+        first,
+        last,
+        freq,
+        closed=closed,
+        base=base,
+        origin=origin,
+        origin_offset=origin_offset,
     )
 
     first = (first + adjust_first * freq).to_period(freq)
@@ -1750,7 +1767,6 @@ def _get_period_range_edges(
 def _adjust_dates_anchored(
     first, last, freq, closed="right", base=0, origin=None, origin_offset=None
 ):
-    # FIXME change comment?
     # First and last offsets should be calculated from the start day to fix an
     # error cause by resampling across multiple days when a one day period is
     # not a multiple of the frequency.
