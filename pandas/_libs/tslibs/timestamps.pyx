@@ -46,7 +46,8 @@ cdef inline object create_timestamp_from_ts(int64_t value,
     cdef _Timestamp ts_base
     ts_base = _Timestamp.__new__(Timestamp, dts.year, dts.month,
                                  dts.day, dts.hour, dts.min,
-                                 dts.sec, dts.us, tz, fold=fold)
+                                 dts.sec, dts.us, tz)
+    ts_base.fold = fold
     ts_base.value = value
     ts_base.freq = freq
     ts_base.nanosecond = dts.ps // 1000
@@ -434,7 +435,7 @@ class Timestamp(_Timestamp):
                 month is None and day is None and hour is None and
                 minute is None and second is None and
                 microsecond is None and nanosecond is None and
-                tzinfo is None):
+                tzinfo is None and fold is None):
             return ts_input
         elif isinstance(ts_input, str):
             # User passed a date string to parse.

@@ -1011,6 +1011,7 @@ def test_timestamp_constructor_retain_fold(tz, fold):
     result = ts.fold
     expected = fold
     assert result == expected
+    assert ts.to_pydatetime().fold == expected
 
 
 @pytest.mark.parametrize("tz", ["dateutil/Europe/London"])
